@@ -20,7 +20,7 @@ namespace LiveSplit.UI.Components
 
         public string ComponentName => "Reset Chance";
 
-        // The fraction of the total run that each split represents.
+        // The list containing all the calculated reset chances for each split.
         protected List<float> ResetChances { get; set; }
         // The reset chance of the current split.
         protected float CurrentResetChance { get; set; }
@@ -37,7 +37,6 @@ namespace LiveSplit.UI.Components
         public float PaddingBottom => InternalComponent.PaddingBottom;
         public float PaddingRight => InternalComponent.PaddingRight;
 
-        // I'm going to be honest, I don't know what this is for, but I know we don't need it.
         public IDictionary<string, Action> ContextMenuControls => null;
 
         // This function is called when LiveSplit creates your component. This happens when the
@@ -59,7 +58,7 @@ namespace LiveSplit.UI.Components
             CurrentSplitValid = false;
         }
 
-        void state_OnStart(object sender, EventArgs e)
+        private void state_OnStart(object sender, EventArgs e)
         {
             // Invalidate the list of reset chances so we can recalculate them.
             ResetChancesValid = false;
@@ -67,13 +66,13 @@ namespace LiveSplit.UI.Components
             CurrentSplitValid = false;
         }
 
-        void state_OnSplitChange(object sender, EventArgs e)
+        private void state_OnSplitChange(object sender, EventArgs e)
         {
             // Invalidate the current split, so we recalculate the current split.
             CurrentSplitValid = false;
         }
 
-        void state_OnReset(object sender, TimerPhase e)
+        private void state_OnReset(object sender, TimerPhase e)
         {
             // Invalidate the current split, so we recalculate the current split.
             CurrentSplitValid = false;
