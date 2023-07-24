@@ -13,7 +13,8 @@ There are three options for calculating the reset chances:
 * Base reset chance on past N runs - This option will only look at splits from the past N runs when calculating. Some later splits may have much fewer than N attempts when choosing this option.
 * Base reset chance on past N attempts at current split - For every individual split, the component will look at the past N attempts at that split when calculating the reset chance.
 
-In two instances, the component will display "?" instead of a percent value:
+In some instances, the component will display "?" instead of a percent value:
 
 * The component could find no completed attempts at this split, when looking at the available values (the past N runs, or the past N split attempts).
 * The split has been completed more times than the previous split has been completed. (This can happen if splits are moved from one location to another, for example.)
+* The split data has been modified after the fact one way or another.
