@@ -21,6 +21,6 @@ namespace LiveSplit.UI.Components
 
         public string XMLURL => UpdateURL + "Components/update.LiveSplit.ResetChance.xml";
 
-        public Version Version => Version.Parse("1.0.0");
+        public Version Version => Version.Parse("1.1.0");
     }
 }

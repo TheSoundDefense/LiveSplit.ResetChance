@@ -1,4 +1,14 @@
 <updates>
+  <update version="1.1.0">
+    <files>
+      <file path="Components/LiveSplit.ResetChance.dll" status="changed"/>
+    </files>
+    <changelog>
+      <change>
+        Fixing a bug with the reset chance calculation on two of the three methods.
+      </change>
+    </changelog>
+  </update>
   <update version="1.0.0">
     <files>
       <file path="Components/LiveSplit.ResetChance.dll" status="changed"/>

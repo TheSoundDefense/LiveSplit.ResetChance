@@ -188,7 +188,8 @@ namespace LiveSplit.UI.Components
         {
             // This minimum run ID will determine which run attempts and run completions can be
             // used in the calculation.
-            int minRunId = Math.Max(0, state.Run.AttemptHistory.Count + 1 - Settings.BasisSubset);
+            int latestRunId = state.Run.AttemptHistory.Max(attempt => attempt.Index);
+            int minRunId = Math.Max(0, latestRunId + 1 - Settings.BasisSubset);
 
             // Determine how many completed attempts each segment has above the minimum run ID.
             List<int> completedSplits = new List<int>();
@@ -256,7 +257,8 @@ namespace LiveSplit.UI.Components
             for (int segmentIndex = 0; segmentIndex < state.Run.Count(); segmentIndex++)
             {
                 // Initialize the data for the first split.
-                int minRunId = Math.Max(0, state.Run.AttemptHistory.Count + 1 - Settings.BasisSubsetSplits);
+                int latestRunId = state.Run.AttemptHistory.Max(attempt => attempt.Index);
+                int minRunId = Math.Max(0, latestRunId + 1 - Settings.BasisSubsetSplits);
                 float numAttempts = Math.Min(state.Run.AttemptHistory.Count, Settings.BasisSubsetSplits);
 
                 // For other splits, we'll use the data we previously calculated.
