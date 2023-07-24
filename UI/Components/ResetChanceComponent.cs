@@ -159,122 +159,139 @@ namespace LiveSplit.UI.Components
             return numCompletions;
         }
 
-        private float resetChanceForAllRuns(LiveSplitState state, int segmentIndex)
+        private List<float> resetChancesForAllRuns(LiveSplitState state)
         {
-            float numCompletions = state.Run[segmentIndex].SegmentHistory.Count;
-            // For the first segment, the number of attempts is the number of overall run
-            // attempts. Otherwise, it's the number of completions for the previous split.
-            float numAttempts = segmentIndex == 0
-                ? state.Run.AttemptHistory.Count
-                : state.Run[segmentIndex - 1].SegmentHistory.Count;
+            List<float> chances = new List<float>();
 
-            // We'll use -1 as an initial value.
-            float resetChance = -1;
-            if (numCompletions > 0 && numAttempts > 0)
+            for (int segmentIndex = 0; segmentIndex < state.Run.Count(); segmentIndex++)
             {
-                resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                float numCompletions = state.Run[segmentIndex].SegmentHistory.Count;
+                // For the first segment, the number of attempts is the number of overall run
+                // attempts. Otherwise, it's the number of completions for the previous split.
+                float numAttempts = segmentIndex == 0
+                    ? state.Run.AttemptHistory.Count
+                    : state.Run[segmentIndex - 1].SegmentHistory.Count;
+
+                // We'll use -1 as an initial value.
+                float resetChance = -1;
+                if (numCompletions > 0 && numAttempts > 0)
+                {
+                    resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                }
+                chances.Add(resetChance);
             }
 
-            return resetChance;
+            return chances;
         }
 
-        private float resetChanceForSubsetOfRuns(LiveSplitState state, int segmentIndex)
+        private List<float> resetChancesForSubsetOfRuns(LiveSplitState state)
         {
             // This minimum run ID will determine which run attempts and run completions can be
             // used in the calculation.
             int minRunId = Math.Max(0, state.Run.AttemptHistory.Count + 1 - Settings.BasisSubset);
 
-            float numCompletions = getCompletionsAboveMinRunId(state.Run[segmentIndex], minRunId);
-
-            float numAttempts = segmentIndex == 0
-                // If this is the first split, we get the specified number of runs to use, or the
-                // total number of run attempts, whichever is smaller.
-                ? Math.Min(state.Run.AttemptHistory.Count, Settings.BasisSubset)
-                // Otherwise, it's the number of completions on the previous split that are above
-                // our minimum run ID.
-                : getCompletionsAboveMinRunId(state.Run[segmentIndex - 1], minRunId);
-
-            // We'll use -1 as an initial value.
-            float resetChance = -1;
-            if (numCompletions > 0 && numAttempts > 0)
+            // Determine how many completed attempts each segment has above the minimum run ID.
+            List<int> completedSplits = new List<int>();
+            for (int segmentIndex = 0; segmentIndex < state.Run.Count(); segmentIndex++)
             {
-                resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                int numCompletions = getCompletionsAboveMinRunId(state.Run[segmentIndex], minRunId);
+                completedSplits.Add(numCompletions);
+            }
+            List<float> chances = new List<float>();
+
+            for (int segmentIndex = 0; segmentIndex < state.Run.Count(); segmentIndex++)
+            {
+                float numCompletions = completedSplits[segmentIndex];
+
+                float numAttempts = segmentIndex == 0
+                    // If this is the first split, we get the specified number of runs to use, or the
+                    // total number of run attempts, whichever is smaller.
+                    ? Math.Min(state.Run.AttemptHistory.Count, Settings.BasisSubset)
+                    // Otherwise, it's the number of completions on the previous split that are above
+                    // our minimum run ID.
+                    : completedSplits[segmentIndex - 1];
+                // We'll use -1 as an initial value.
+                float resetChance = -1;
+                if (numCompletions > 0 && numAttempts > 0)
+                {
+                    resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                }
+                chances.Add(resetChance);
             }
 
-            return resetChance;
+            return chances;
         }
 
-        private float resetChanceForSubsetOfSplitAttempts(LiveSplitState state, int segmentIndex)
+        private List<float> resetChancesForSubsetOfSplitAttempts(LiveSplitState state)
         {
-            float numAttempts;
-            float numCompletions;
+            List<int> numCompletionsList = new List<int>();
+            List<int> minRunIds = new List<int>();
 
-            ISegment currentSegment = state.Run[segmentIndex];
-
-            // If this is the first split, the minimum run ID is simpler to determine.
-            if (segmentIndex == 0)
+            // For each split, determine the number of attempts at that split (which may be smaller
+            // than intended) and the minimum run ID for that segment.
+            for (int segmentIndex = 0; segmentIndex < state.Run.Count(); segmentIndex++)
             {
-                int minRunId = Math.Max(0, state.Run.AttemptHistory.Count + 1 - Settings.BasisSubsetSplits);
-                numAttempts = Math.Min(state.Run.AttemptHistory.Count, Settings.BasisSubsetSplits);
-                numCompletions = getCompletionsAboveMinRunId(currentSegment, minRunId);
-            }
-            // Otherwise, we have to take a good look at the history of the previous split to
-            // determine the minimum run ID.
-            else
-            {
-                ISegment previousSegment = state.Run[segmentIndex - 1];
-
-                // If there aren't enough attempts in the previous split, just use all of them and
-                // forget about the minimum run ID.
-                if (previousSegment.SegmentHistory.Count <= Settings.BasisSubsetSplits)
+                ISegment currentSegment = state.Run[segmentIndex];
+                // If this split has been completed fewer times than the basis for the calculation,
+                // just indicate how many completions there were. The minimum run ID will be set to
+                // 0, so the next split can look at all attempts.
+                if (currentSegment.SegmentHistory.Count <= Settings.BasisSubsetSplits)
                 {
-                    numAttempts = previousSegment.SegmentHistory.Count;
-                    numCompletions = currentSegment.SegmentHistory.Count;
+                    numCompletionsList.Add(currentSegment.SegmentHistory.Count);
+                    minRunIds.Add(0);
                 }
                 else
                 {
                     // Get the full list of run IDs from the previous segment, sort them, and use
                     // that to determine the minimum run ID.
-                    List<int> splitIds = previousSegment.SegmentHistory.Keys.ToList<int>();
+                    List<int> splitIds = currentSegment.SegmentHistory.Keys.ToList<int>();
                     splitIds.Sort();
-                    int minRunId = splitIds[previousSegment.SegmentHistory.Count - Settings.BasisSubsetSplits];
-
-                    numAttempts = Settings.BasisSubsetSplits;
-                    numCompletions = getCompletionsAboveMinRunId(currentSegment, minRunId);
+                    int minRunId = splitIds[currentSegment.SegmentHistory.Count - Settings.BasisSubsetSplits];
+                    minRunIds.Add(minRunId);
+                    numCompletionsList.Add(Settings.BasisSubsetSplits);
                 }
             }
 
-            // We'll use -1 as an initial value.
-            float resetChance = -1;
-            if (numCompletions > 0 && numAttempts > 0)
+            List<float> chances = new List<float>();
+            for (int segmentIndex = 0; segmentIndex < state.Run.Count(); segmentIndex++)
             {
-                resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                // Initialize the data for the first split.
+                int minRunId = Math.Max(0, state.Run.AttemptHistory.Count + 1 - Settings.BasisSubsetSplits);
+                float numAttempts = Math.Min(state.Run.AttemptHistory.Count, Settings.BasisSubsetSplits);
+
+                // For other splits, we'll use the data we previously calculated.
+                if (segmentIndex > 0)
+                {
+                    minRunId = minRunIds[segmentIndex - 1];
+                    numAttempts = numCompletionsList[segmentIndex - 1];
+                }
+
+                // Determine how many times this split was completed, based on the minimum run ID.
+                float numCompletions = getCompletionsAboveMinRunId(state.Run[segmentIndex], minRunId);
+
+                // We'll use -1 as an initial value.
+                float resetChance = -1;
+                if (numCompletions > 0 && numAttempts > 0)
+                {
+                    resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                }
+
+                chances.Add(resetChance);
             }
 
-            return resetChance;
+            return chances;
         }
 
         // This is the function where we determine the chances of resetting for each individual
         // split.
         private List<float> calculateResetChances(LiveSplitState state)
         {
-            List<float> chances = new List<float>();
-
-            for (int i = 0; i < state.Run.Count(); i++)
-            {
-                float resetChance;
-                if (Settings.Basis.Equals(ResetChanceSettings.ResetChanceBasis.AllRuns))
-                    resetChance = resetChanceForAllRuns(state, i);
-                else if (Settings.Basis.Equals(ResetChanceSettings.ResetChanceBasis.Subset))
-                    resetChance = resetChanceForSubsetOfRuns(state, i);
-                else
-                    resetChance = resetChanceForSubsetOfSplitAttempts(state, i);
-
-                // Add this reset chance to our list.
-                chances.Add(resetChance);
-            }
-
-            return chances;
+            if (Settings.Basis.Equals(ResetChanceSettings.ResetChanceBasis.AllRuns))
+                return resetChancesForAllRuns(state);
+            else if (Settings.Basis.Equals(ResetChanceSettings.ResetChanceBasis.Subset))
+                return resetChancesForSubsetOfRuns(state);
+            else
+                return resetChancesForSubsetOfSplitAttempts(state);
         }
 
         // Get the current reset chance to display, taking into account the timer state.
