@@ -9,14 +9,4 @@
       </change>
     </changelog>
   </update>
-  <update version="1.1.0">
-    <files>
-      <file path="Components/LiveSplit.ResetChance.dll" status="changed"/>
-    </files>
-    <changelog>
-      <change>
-        The calculation logic has been rewritten to eliminate a bug.
-      </change>
-    </changelog>
-  </update>
 </updates>
