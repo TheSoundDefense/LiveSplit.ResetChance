@@ -7,6 +7,12 @@ This LiveSplit component displays the chance of the run being reset on the curre
 
 To use this component, download the above DLL file and place it in the Components folder of your LiveSplit installation. This component will appear under the **Information** category.
 
+There are three options for displaying information:
+
+* Reset Chance - This option shows the percent chance of the run resetting on the current split.
+* Success Chance - This option shows the percent chance of completing the current split.
+* Runs Ended - This option shows the total number of runs that ended on the current split.
+
 There are three options for calculating the reset chances:
 
 * Base reset chance on all runs - This option will take your entire run history into account.
