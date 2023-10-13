@@ -159,6 +159,22 @@ namespace LiveSplit.UI.Components
             return numCompletions;
         }
 
+        private float calculateDataForResetChanceMode(float numCompletions, float numAttempts)
+        {
+            if (Settings.ChanceMode == ResetChanceSettings.ResetChanceMode.ResetChance)
+            {
+                return (float)((1 - (numCompletions / numAttempts)) * 100.0);
+            }
+            else if (Settings.ChanceMode == ResetChanceSettings.ResetChanceMode.SuccessChance)
+            {
+                return (float)((numCompletions / numAttempts) * 100.0);
+            }
+            else
+            {
+                return numAttempts - numCompletions;
+            }
+        }
+
         private List<float> resetChancesForAllRuns(LiveSplitState state)
         {
             List<float> chances = new List<float>();
@@ -176,7 +192,7 @@ namespace LiveSplit.UI.Components
                 float resetChance = -1;
                 if (numCompletions > 0 && numAttempts > 0)
                 {
-                    resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                    resetChance = calculateDataForResetChanceMode(numCompletions, numAttempts);
                 }
                 chances.Add(resetChance);
             }
@@ -215,7 +231,7 @@ namespace LiveSplit.UI.Components
                 float resetChance = -1;
                 if (numCompletions > 0 && numAttempts > 0)
                 {
-                    resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                    resetChance = calculateDataForResetChanceMode(numCompletions, numAttempts);
                 }
                 chances.Add(resetChance);
             }
@@ -275,7 +291,7 @@ namespace LiveSplit.UI.Components
                 float resetChance = -1;
                 if (numCompletions > 0 && numAttempts > 0)
                 {
-                    resetChance = (float)((1 - (numCompletions / numAttempts)) * 100.0);
+                    resetChance = calculateDataForResetChanceMode(numCompletions, numAttempts);
                 }
 
                 chances.Add(resetChance);
@@ -325,26 +341,43 @@ namespace LiveSplit.UI.Components
                 CurrentSplitValid = true;
                 CurrentResetChance = getResetChance(state);
 
+                bool showTrailingZeroes = Settings.ShowTrailingZeroes
+                    && Settings.ChanceMode != ResetChanceSettings.ResetChanceMode.RunsEnded;
+                string maybePercent = Settings.ChanceMode == ResetChanceSettings.ResetChanceMode.RunsEnded
+                    ? ""
+                    : "%";
                 // Format with no decimal points.
-                string resetChanceFormat = $"{CurrentResetChance:0}%";
+                string resetChanceFormat = $"{CurrentResetChance:0}{maybePercent}";
                 if (Settings.Accuracy.Equals(ResetChanceSettings.ResetChanceAccuracy.OneDecimal))
                 {
                     // Format with up to one decimal point.
-                    resetChanceFormat = Settings.ShowTrailingZeroes
-                        ? $"{CurrentResetChance:0.0}%"
-                        : $"{CurrentResetChance:0.#}%";
+                    resetChanceFormat = showTrailingZeroes
+                        ? $"{CurrentResetChance:0.0}{maybePercent}"
+                        : $"{CurrentResetChance:0.#}{maybePercent}";
                 }
                 else if (Settings.Accuracy.Equals(ResetChanceSettings.ResetChanceAccuracy.TwoDecimal))
                 {
                     // Format with up to two decimal points.
-                    resetChanceFormat = Settings.ShowTrailingZeroes
-                        ? $"{CurrentResetChance:0.00}%"
-                        : $"{CurrentResetChance:0.##}%";
+                    resetChanceFormat = showTrailingZeroes
+                        ? $"{CurrentResetChance:0.00}{maybePercent}"
+                        : $"{CurrentResetChance:0.##}{maybePercent}";
                 }
                 // If we can't make an estimate, just display "?".
                 InternalComponent.InformationValue = CurrentResetChance >= 0 ? resetChanceFormat : "?";
             }
 
+            if (Settings.ChanceMode == ResetChanceSettings.ResetChanceMode.ResetChance)
+            {
+                InternalComponent.InformationName = "Reset Chance";
+            }
+            else if (Settings.ChanceMode == ResetChanceSettings.ResetChanceMode.SuccessChance)
+            {
+                InternalComponent.InformationName = "Success Chance";
+            }
+            else
+            {
+                InternalComponent.InformationName = "Runs Ended";
+            }
             InternalComponent.Update(invalidator, state, width, height, mode);
         }
 

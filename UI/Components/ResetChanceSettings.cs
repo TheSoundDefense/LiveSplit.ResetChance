@@ -21,6 +21,14 @@ namespace LiveSplit.UI.Components
             set { BackgroundGradient = (GradientType)Enum.Parse(typeof(GradientType), value); }
         }
 
+        public enum ResetChanceMode
+        {
+            ResetChance,
+            SuccessChance,
+            RunsEnded
+        }
+        public ResetChanceMode ChanceMode { get; set; }
+
         public enum ResetChanceAccuracy
         {
             ZeroDecimal,
@@ -57,6 +65,7 @@ namespace LiveSplit.UI.Components
             BackgroundColor = Color.Transparent;
             BackgroundColor2 = Color.Transparent;
             BackgroundGradient = GradientType.Plain;
+            ChanceMode = ResetChanceMode.ResetChance;
             Accuracy = ResetChanceAccuracy.ZeroDecimal;
             Basis = ResetChanceBasis.AllRuns;
             BasisSubset = 100;
@@ -79,6 +88,11 @@ namespace LiveSplit.UI.Components
         {
             chkOverrideTextColor_CheckedChanged(null, null);
             chkOverrideResetColor_CheckedChanged(null, null);
+
+            rdoModeResetChance.Checked = ChanceMode == ResetChanceMode.ResetChance;
+            rdoModeSuccessChance.Checked = ChanceMode == ResetChanceMode.SuccessChance;
+            rdoModeRunsEnded.Checked = ChanceMode == ResetChanceMode.RunsEnded;
+
             rdoDecimalZero.Checked = Accuracy == ResetChanceAccuracy.ZeroDecimal;
             rdoDecimalOne.Checked = Accuracy == ResetChanceAccuracy.OneDecimal;
             rdoDecimalTwo.Checked = Accuracy == ResetChanceAccuracy.TwoDecimal;
@@ -126,6 +140,7 @@ namespace LiveSplit.UI.Components
             BackgroundColor = SettingsHelper.ParseColor(element["BackgroundColor"]);
             BackgroundColor2 = SettingsHelper.ParseColor(element["BackgroundColor2"]);
             GradientString = SettingsHelper.ParseString(element["BackgroundGradient"]);
+            ChanceMode = SettingsHelper.ParseEnum<ResetChanceMode>(element["ChanceMode"]);
             Accuracy = SettingsHelper.ParseEnum<ResetChanceAccuracy>(element["Accuracy"]);
             ShowTrailingZeroes = SettingsHelper.ParseBool(element["ShowTrailingZeroes"]);
             Basis = SettingsHelper.ParseEnum<ResetChanceBasis>(element["Basis"]);
@@ -156,12 +171,28 @@ namespace LiveSplit.UI.Components
                 SettingsHelper.CreateSetting(document, parent, "BackgroundColor", BackgroundColor) ^
                 SettingsHelper.CreateSetting(document, parent, "BackgroundColor2", BackgroundColor2) ^
                 SettingsHelper.CreateSetting(document, parent, "BackgroundGradient", BackgroundGradient) ^
+                SettingsHelper.CreateSetting(document, parent, "ChanceMode", ChanceMode) ^
                 SettingsHelper.CreateSetting(document, parent, "Accuracy", Accuracy) ^
                 SettingsHelper.CreateSetting(document, parent, "ShowTrailingZeroes", ShowTrailingZeroes) ^
                 SettingsHelper.CreateSetting(document, parent, "Basis", Basis) ^
                 SettingsHelper.CreateSetting(document, parent, "BasisSubset", BasisSubset) ^
                 SettingsHelper.CreateSetting(document, parent, "BasisSubsetSplits", BasisSubsetSplits) ^
                 SettingsHelper.CreateSetting(document, parent, "Display2Rows", Display2Rows);
+        }
+
+        private void rdoModeResetChance_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateMode();
+        }
+
+        private void rdoModeSuccessChance_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateMode();
+        }
+
+        private void rdoModeRunsEnded_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateMode();
         }
 
         private void rdoDecimalZero_CheckedChanged(object sender, EventArgs e)
@@ -215,6 +246,16 @@ namespace LiveSplit.UI.Components
         private void chkOverrideResetColor_CheckedChanged(object sender, EventArgs e)
         {
             resetColorLabel.Enabled = btnResetColor.Enabled = chkOverrideResetColor.Checked;
+        }
+
+        private void UpdateMode()
+        {
+            if (rdoModeResetChance.Checked)
+                ChanceMode = ResetChanceMode.ResetChance;
+            else if (rdoModeSuccessChance.Checked)
+                ChanceMode = ResetChanceMode.SuccessChance;
+            else
+                ChanceMode = ResetChanceMode.RunsEnded;
         }
 
         private void UpdateAccuracy()

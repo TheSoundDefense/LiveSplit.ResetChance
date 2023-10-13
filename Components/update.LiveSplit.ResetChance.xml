@@ -1,4 +1,17 @@
 <updates>
+  <update version="1.2.0">
+    <files>
+      <file path="Components/LiveSplit.ResetChance.dll" status="changed" />
+    </files>
+    <changelog>
+      <change>
+        Added "Success Chance" option, which shows the percent chance of successfully completing the current split.
+      </change>
+      <change>
+        Added "Runs Ended" option, which shows the number of runs that ended on the current split.
+      </change>
+    </changelog>
+  </update>
   <update version="1.1.0">
     <files>
       <file path="Components/LiveSplit.ResetChance.dll" status="changed" />
